@@ -1,13 +1,28 @@
 {
   "manifest_version": 3,
   "name": "Dogpamine",
-  "version": "0.1.0",
-  "description": "알고리즘이 스스로 김 빠지게 만든다",
+  "version": "0.2.0",
+  "description": "포만감 알고리즘 기반 자기제어 익스텐션. 켜고 끄는 건 본인 결정.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Dogpamine"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
-      "matches": ["https://www.instagram.com/reels/*"],
+      "matches": [
+        "https://www.youtube.com/shorts/*",
+        "https://www.instagram.com/reels/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }
+  ],
+  "permissions": ["storage", "alarms"],
+  "host_permissions": [
+    "https://www.youtube.com/*",
+    "https://www.instagram.com/*"
   ]
 }
