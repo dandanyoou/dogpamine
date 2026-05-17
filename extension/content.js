@@ -78,14 +78,17 @@
   };
 
   // ── 4. Style element (synchronous no-op — Eng 5: no flash) ────────
+  // Curve: cubic-bezier(0.4, 0, 0.2, 1) = Material standard "decelerate".
+  // 2s duration (1.5s → 2s, autoplan T3 회수 시간) — 채도 "draining" 더 부드럽게.
+  const SAT_TRANSITION = 'filter 2s cubic-bezier(0.4, 0, 0.2, 1)';
   const styleEl = document.createElement('style');
   styleEl.id = 'dogpamine-filter';
-  styleEl.textContent = 'html { filter: saturate(100%); transition: filter 1.5s ease; }';
+  styleEl.textContent = `html { filter: saturate(100%); transition: ${SAT_TRANSITION}; }`;
   document.documentElement.appendChild(styleEl);
 
   function setSaturation(percent) {
     styleEl.textContent =
-      `html { filter: saturate(${percent}%); transition: filter 1.5s ease; }`;
+      `html { filter: saturate(${percent}%); transition: ${SAT_TRANSITION}; }`;
   }
 
   // ── 5. Stage logic ────────────────────────────────────────────────
@@ -94,7 +97,62 @@
     setSaturation(stage.saturation);
     console.log(`[Dogpamine] Stage → ${stage.label} (sat ${stage.saturation}%)`);
     pushStateToPopup();
-    // T5: overlay rendering on stage.overlay === true && !state.overlayDismissed
+    if (stage.overlay && !state.overlayDismissed) showOverlay();
+  }
+
+  // ── 5b. STOP overlay (T5) ─────────────────────────────────────────
+  function showOverlay() {
+    if (document.getElementById('dogpamine-overlay')) return;
+    const avgSec = state.recentDwells.length > 0
+      ? state.recentDwells.reduce((a, b) => a + b, 0) / state.recentDwells.length / 1000
+      : 0;
+    const wrap = document.createElement('div');
+    wrap.id = 'dogpamine-overlay';
+    wrap.setAttribute('role', 'dialog');
+    wrap.setAttribute('aria-modal', 'true');
+    wrap.setAttribute('aria-labelledby', 'dogpamine-overlay-title');
+    wrap.innerHTML = `
+      <div class="dogpamine-card">
+        <span class="dogpamine-card__emoji" aria-hidden="true">🐶</span>
+        <h2 class="dogpamine-card__title" id="dogpamine-overlay-title">도움이 되었길 바라요</h2>
+        <p class="dogpamine-card__subtitle">잠깐 쉬어볼까요?</p>
+        <div class="dogpamine-card__stats">
+          <div class="dogpamine-card__stats-row">
+            <span class="dogpamine-card__stats-label">본 영상</span>
+            <span class="dogpamine-card__stats-value">${state.measuredDwellCount}개</span>
+          </div>
+          <div class="dogpamine-card__stats-row">
+            <span class="dogpamine-card__stats-label">평균 체류</span>
+            <span class="dogpamine-card__stats-value">${avgSec.toFixed(1)}초</span>
+          </div>
+        </div>
+        <button type="button" class="dogpamine-card__close" id="dogpamine-overlay-close">
+          알겠어요
+        </button>
+        <p class="dogpamine-card__legend">포만감 알고리즘 · 행동 패턴 감지</p>
+      </div>
+    `;
+    document.body.appendChild(wrap);
+    requestAnimationFrame(() => wrap.classList.add('visible'));
+
+    const closeBtn = wrap.querySelector('#dogpamine-overlay-close');
+    const close = () => {
+      state.overlayDismissed = true;
+      wrap.classList.remove('visible');
+      // transition 끝나면 제거 (250ms)
+      setTimeout(() => wrap.remove(), 300);
+      // ESC focus trap 해제
+      document.removeEventListener('keydown', onEsc);
+    };
+    closeBtn.addEventListener('click', close);
+    const onEsc = (e) => { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', onEsc);
+    closeBtn.focus();
+  }
+
+  function removeOverlay() {
+    const ov = document.getElementById('dogpamine-overlay');
+    if (ov) ov.remove();
   }
 
   function isPaused() {
@@ -223,6 +281,7 @@
     state.measuredDwellCount = 0;
     state.observedVideoCount = 0;
     state.overlayDismissed = false;
+    removeOverlay();
     setSaturation(100);
     pushStateToPopup();
   }
