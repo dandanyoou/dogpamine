@@ -23,28 +23,41 @@
 
   // ── 초기화 ───────────────────────────────────────────────────
   async function init() {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    activeTabId = tab?.id ?? null;
-    const url = tab?.url ?? '';
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      activeTabId = tab?.id ?? null;
+      const url = tab?.url ?? '';
+      console.log('[Dogpamine popup] active tab url =', url);
 
-    if (!url || !SUPPORTED_URL_RE.test(url)) {
+      if (!url || !SUPPORTED_URL_RE.test(url)) {
+        setState('error');
+        return;
+      }
+
+      const stored = await chrome.storage.local.get([
+        'enabled', 'sessionMode', 'sessionStart', 'pausedUntil',
+      ]);
+      console.log('[Dogpamine popup] storage =', stored);
+
+      // 안전망: 만료된 세션이 enabled=true 인 채로 남아있으면 즉시 정리.
+      if (stored.enabled && isExpired(stored.sessionMode, stored.sessionStart)) {
+        await chrome.storage.local.set({ enabled: false });
+        stored.enabled = false;
+        stored.pausedUntil = null;
+      }
+
+      renderFromStorage(stored);
+      startPolling();
+    } catch (e) {
+      // init() 가 어디서 throw 되면 popup 이 영원히 "로딩 중…" 에 박힘.
+      // 가시적 fallback — error state 의 카피를 바꿔서 정확한 원인 노출.
+      console.error('[Dogpamine popup] init failed:', e);
+      const errTitle = document.querySelector('.error-title');
+      const errMuted = document.querySelector('.state--error .muted');
+      if (errTitle) errTitle.textContent = '오류 발생';
+      if (errMuted) errMuted.textContent = `popup 초기화 실패: ${e?.message || e}`;
       setState('error');
-      return;
     }
-
-    const stored = await chrome.storage.local.get([
-      'enabled', 'sessionMode', 'sessionStart', 'pausedUntil',
-    ]);
-
-    // 안전망: 만료된 세션이 enabled=true 인 채로 남아있으면 즉시 정리.
-    if (stored.enabled && isExpired(stored.sessionMode, stored.sessionStart)) {
-      await chrome.storage.local.set({ enabled: false });
-      stored.enabled = false;
-      stored.pausedUntil = null;
-    }
-
-    renderFromStorage(stored);
-    startPolling();
   }
 
   // ── storage → UI ─────────────────────────────────────────────

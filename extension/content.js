@@ -51,10 +51,12 @@
     { dwellLt: 1.5,      saturation: 35,  overlay: true,  label: 'STOP' },
   ];
 
-  const DWELL_WINDOW = 5;
+  // 시연용 — 3 dwell 측정 후 첫 단계 진행 (이전 5 → 빠른 시각 피드백)
+  const DWELL_WINDOW = 3;
   const EXPIRY_CHECK_MS = 60_000;
   const DISCOVERY_DEBOUNCE_MS = 100;
   const PUSH_THROTTLE_MS = 1000;
+  const TICK_LOG_MS = 5_000;
 
   // ── 3. State ──────────────────────────────────────────────────────
   const state = {
@@ -67,6 +69,7 @@
     videoObservers: new Map(),  // video → IntersectionObserver
     mutationObserver: null,
     expiryHandle: null,
+    tickHandle: null,
     pausedUntil: null,
     storageChangeCounter: 0,
     initSnapshotCounter: 0,
@@ -242,17 +245,56 @@
     console.log('[Dogpamine] attach on', site.name);
 
     const root = site.mutationRoot();
+    console.log('[Dogpamine] MO root =', root?.tagName, root);
     const mo = new MutationObserver((mutations) => {
       const added = [];
-      for (const m of mutations) for (const n of m.addedNodes) added.push(n);
+      for (const m of mutations) {
+        for (const n of m.addedNodes) added.push(n);
+        // YT virtual scroll fix: <video> destroy 될 때 dwell 강제 기록.
+        // 기존 IO 는 element removal 시 silent disconnect — exit 이벤트 안 옴.
+        for (const n of m.removedNodes) {
+          if (n.nodeType !== 1) continue;
+          const vids = n.tagName === 'VIDEO'
+            ? [n]
+            : (n.querySelectorAll ? Array.from(n.querySelectorAll('video')) : []);
+          for (const v of vids) {
+            if (v.dataset.dogViewStart) {
+              const dwellMs = Date.now() - Number(v.dataset.dogViewStart);
+              delete v.dataset.dogViewStart;
+              state.recentDwells.push(dwellMs);
+              if (state.recentDwells.length > DWELL_WINDOW) state.recentDwells.shift();
+              state.measuredDwellCount++;
+              console.log(`[Dogpamine] dwell on removal: ${dwellMs}ms`);
+              maybeAdvanceStage();
+              pushStateToPopup();
+            }
+            const obs = state.videoObservers.get(v);
+            if (obs) { obs.disconnect(); state.videoObservers.delete(v); }
+          }
+        }
+      }
       if (added.length) queueDiscovery(added);
     });
     mo.observe(root, { childList: true, subtree: true });
     state.mutationObserver = mo;
 
     discoverExisting(root);
+    console.log(`[Dogpamine] initial discover: observed=${state.observedVideoCount}`);
 
     state.expiryHandle = setInterval(checkExpiry, EXPIRY_CHECK_MS);
+
+    // 5초 디버그 tick — 셀렉터 깨짐 / dwell 측정 정체 즉시 감지용.
+    state.tickHandle = setInterval(() => {
+      const avg = state.recentDwells.length > 0
+        ? (state.recentDwells.reduce((a, b) => a + b, 0) / state.recentDwells.length / 1000).toFixed(2)
+        : '—';
+      console.log(
+        `[Dogpamine] tick — stage=${STAGES[state.currentStageIdx].label} ` +
+        `observed=${state.observedVideoCount} measured=${state.measuredDwellCount} ` +
+        `avgDwell=${avg}s window=${state.recentDwells.length}/${DWELL_WINDOW}`
+      );
+    }, TICK_LOG_MS);
+
     applyStage();
   }
 
@@ -274,6 +316,10 @@
     if (state.expiryHandle) {
       clearInterval(state.expiryHandle);
       state.expiryHandle = null;
+    }
+    if (state.tickHandle) {
+      clearInterval(state.tickHandle);
+      state.tickHandle = null;
     }
 
     state.currentStageIdx = 0;
