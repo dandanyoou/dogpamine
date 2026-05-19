@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "_note": "큐레이션 URL 풀. 형식: https://www.youtube.com/shorts/{11자 video id}. STOP→큐레이션 모드 + sparse inject 1:10 둘 다 이 풀에서 픽.",
+  "weights": {
+    "news": 0.4,
+    "animals": 0.6
+  },
+  "categories": {
+    "news": [
+      "https://www.youtube.com/shorts/qsPQpzg71u0",
+      "https://www.youtube.com/shorts/75j24i0Dc7Q",
+      "https://www.youtube.com/shorts/77LlWABXc7M",
+      "https://www.youtube.com/shorts/FcdIYVDoqgc",
+      "https://www.youtube.com/shorts/ugxSzHG5iCU",
+      "https://www.youtube.com/shorts/O-6GRVm60Vw",
+      "https://www.youtube.com/shorts/rzqJyWLOeg4",
+      "https://www.youtube.com/shorts/VG8O78cQW-E",
+      "https://www.youtube.com/shorts/heVOQn_Smh0",
+      "https://www.youtube.com/shorts/axjfhjyBI0o",
+      "https://www.youtube.com/shorts/XRVPb8uOCOo"
+    ],
+    "animals": [
+      "https://www.youtube.com/shorts/dqTO_5FVXE0",
+      "https://www.youtube.com/shorts/I3gNr7UoIB4",
+      "https://www.youtube.com/shorts/gp1QYwNi3oY",
+      "https://www.youtube.com/shorts/5fm7nCQjOCc",
+      "https://www.youtube.com/shorts/d1ffVPSHdM4",
+      "https://www.youtube.com/shorts/Pyp0OiWj-Rw",
+      "https://www.youtube.com/shorts/Q1jg4gTGUZg"
+    ]
+  }
+}

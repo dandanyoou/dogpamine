@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Dogpamine",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "포만감 알고리즘 기반 자기제어 익스텐션. 켜고 끄는 건 본인 결정.",
   "action": {
     "default_popup": "popup.html",
@@ -24,7 +24,7 @@
     {
       "matches": [
         "https://www.youtube.com/shorts/*",
-        "https://www.instagram.com/reels/*"
+        "https://www.instagram.com/*"
       ],
       "js": ["lib/session.js", "content.js"],
       "css": ["overlay.css"],
@@ -35,5 +35,14 @@
   "host_permissions": [
     "https://www.youtube.com/*",
     "https://www.instagram.com/*"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["curated.json"],
+      "matches": [
+        "https://www.youtube.com/*",
+        "https://www.instagram.com/*"
+      ]
+    }
   ]
 }

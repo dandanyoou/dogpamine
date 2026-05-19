@@ -105,24 +105,56 @@
   font-feature-settings: "tnum";
 }
 
-.dogpamine-card__close {
+.dogpamine-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.dogpamine-card__cta {
   display: inline-block;
-  background: #1F2937;
+  background: #FF6A88;
   color: #FFFFFF;
   border: 0;
   border-radius: 12px;
-  padding: 14px 32px;
+  padding: 14px 24px;
   font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  letter-spacing: -0.005em;
+}
+
+.dogpamine-card__cta:hover {
+  background: #E85775;
+}
+.dogpamine-card__cta:active {
+  transform: translateY(1px);
+}
+.dogpamine-card__cta:focus-visible {
+  outline: 3px solid #FF6A88;
+  outline-offset: 2px;
+}
+
+.dogpamine-card__close {
+  display: inline-block;
+  background: #F3F4F6;
+  color: #1F2937;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 14px;
   font-weight: 500;
   font-family: inherit;
   cursor: pointer;
   transition: background 0.15s ease, transform 0.1s ease;
   letter-spacing: -0.005em;
-  min-width: 140px;
 }
 
 .dogpamine-card__close:hover {
-  background: #111827;
+  background: #E5E7EB;
 }
 .dogpamine-card__close:active {
   transform: translateY(1px);

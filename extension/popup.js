@@ -10,8 +10,10 @@
   const body = document.body;
   const { isExpired } = self.DogpamineSession;
 
+  // IG reels URL은 다양 — /reels/, /reel/{id}/, /{user}/reels/, /{user}/reel/{id}/,
+  // /explore/reels/{id}/ 모두 지원해야 popup 이 정상 동작 (error state 안 뜨게).
   const SUPPORTED_URL_RE =
-    /^https:\/\/www\.(?:youtube\.com\/shorts\/|instagram\.com\/reels\/)/;
+    /^https:\/\/www\.(?:youtube\.com\/shorts\/|instagram\.com\/(?:.*\/)?reels?\/)/;
   const PAUSE_DURATION_MS = 5 * 60 * 1000;
   const POLL_INTERVAL_MS = 10_000;
   const PUSH_FRESHNESS_MS = 5_000;
@@ -139,6 +141,17 @@
 
   $('resume-btn').addEventListener('click', async () => {
     await chrome.storage.local.set({ pausedUntil: null });
+  });
+
+  // ── 큐레이션 점프 (도파민 약한 카테고리로 강제 navigate) ───────
+  $('jump-btn').addEventListener('click', async () => {
+    if (!activeTabId) return;
+    try {
+      await chrome.tabs.sendMessage(activeTabId, { type: 'jump-curated' });
+      // 페이지가 navigate 되므로 popup 도 곧 닫힘 (자동) — 별도 close 불필요
+    } catch (e) {
+      console.warn('[Dogpamine popup] jump 메시지 실패:', e);
+    }
   });
 
   // ── 콘텐츠 스크립트로부터 stats 수신 (push + 10s keep-alive poll) ─
